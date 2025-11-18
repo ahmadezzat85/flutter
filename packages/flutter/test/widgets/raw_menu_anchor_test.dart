@@ -2902,6 +2902,53 @@ void main() {
     expect(customController.closeCallCount, equals(1));
     expect(find.text(Tag.a.text), findsNothing);
   });
+<<<<<<< HEAD
+=======
+
+  testWidgets('RawMenuAnchor correctly updates anchorRect for overlayBuilder when anchor moves', (
+    WidgetTester tester,
+  ) async {
+    RawMenuOverlayInfo? overlayPosition;
+    late StateSetter setState;
+    bool showAdditionalWidget = true;
+
+    await tester.pumpWidget(
+      App(
+        StatefulBuilder(
+          builder: (BuildContext context, StateSetter setter) {
+            setState = setter;
+            return Column(
+              children: <Widget>[
+                if (showAdditionalWidget) const SizedBox(width: 100, height: 100),
+                RawMenuAnchor(
+                  overlayBuilder: (BuildContext context, RawMenuOverlayInfo position) {
+                    overlayPosition = position;
+                    return const SizedBox();
+                  },
+                  controller: controller,
+                  child: AnchorButton(Tag.anchor, onPressed: onPressed),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text(Tag.anchor.text));
+    await tester.pump();
+
+    expect(overlayPosition!.anchorRect, tester.getRect(find.byType(Button)));
+
+    setState(() {
+      showAdditionalWidget = false;
+    });
+
+    await tester.pumpAndSettle();
+
+    expect(overlayPosition!.anchorRect, tester.getRect(find.byType(Button)));
+  });
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
 }
 
 // Custom MenuController that extends the base MenuController

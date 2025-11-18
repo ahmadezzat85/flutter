@@ -10,7 +10,11 @@ import 'dart:async';
 import '../base/io.dart';
 import '../base/logger.dart';
 import '../base/process.dart';
+<<<<<<< HEAD
 import '../convert.dart';
+=======
+import '../base/utils.dart';
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
 
 /// LLDB is the default debugger in Xcode on macOS. Once the application has
 /// launched on a physical iOS device, you can attach to it using LLDB.
@@ -29,6 +33,12 @@ class LLDB {
   /// Whether or not a LLDB process is running.
   bool get isRunning => _lldbProcess != null;
 
+<<<<<<< HEAD
+=======
+  /// Whether or not the LLDB process has attached and resumed the application process.
+  var _isAttached = false;
+
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
   /// The process id of the application running on the iOS device.
   int? get appProcessId => _lldbProcess?.appProcessId;
 
@@ -49,6 +59,12 @@ class LLDB {
   /// Example: Breakpoint 1: no locations (pending).
   static final _breakpointPattern = RegExp(r'Breakpoint (\d+)*:');
 
+<<<<<<< HEAD
+=======
+  /// A list of log patterns to ignore.
+  static final _ignorePatterns = <Pattern>[RegExp(r'\d+ location added to breakpoint \d+')];
+
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
   /// Breakpoint script required for JIT on iOS.
   ///
   /// This should match the "handle_new_rx_page" function in [IosProject._lldbPythonHelperTemplate].
@@ -75,7 +91,18 @@ return False
 
   /// Starts an LLDB process and inputs commands to start debugging the [appProcessId].
   /// This will start a debugserver on the device, which is required for JIT.
+<<<<<<< HEAD
   Future<bool> attachAndStart(String deviceId, int appProcessId) async {
+=======
+  ///
+  /// After attaching and starting the app process, forwards logs to [lldbLogForwarder].
+  /// This may include crash logs.
+  Future<bool> attachAndStart({
+    required String deviceId,
+    required int appProcessId,
+    required LLDBLogForwarder lldbLogForwarder,
+  }) async {
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
     Timer? timer;
     try {
       timer = Timer(const Duration(minutes: 1), () {
@@ -90,7 +117,14 @@ return False
         );
       });
 
+<<<<<<< HEAD
       final bool start = await _startLLDB(appProcessId);
+=======
+      final bool start = await _startLLDB(
+        appProcessId: appProcessId,
+        lldbLogForwarder: lldbLogForwarder,
+      );
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
       if (!start) {
         return false;
       }
@@ -98,6 +132,10 @@ return False
       await _setBreakpoint();
       await _attachToAppProcess(appProcessId);
       await _resumeProcess();
+<<<<<<< HEAD
+=======
+      _isAttached = true;
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
     } on _LLDBError catch (e) {
       _logger.printTrace('lldb failed with error: ${e.message}');
       exit();
@@ -113,7 +151,14 @@ return False
   /// Streams `stdout` and `stderr`. When receiving a log from `stdout`, check
   /// if it matches the pattern [_logCompleter] is waiting for. If a log is sent
   /// to `stderr`, complete with an error and stop the process.
+<<<<<<< HEAD
   Future<bool> _startLLDB(int appProcessId) async {
+=======
+  Future<bool> _startLLDB({
+    required int appProcessId,
+    required LLDBLogForwarder lldbLogForwarder,
+  }) async {
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
     if (_lldbProcess != null) {
       _logger.printTrace(
         'An LLDB process is already running. It must be stopped before starting a new one.',
@@ -128,6 +173,7 @@ return False
       );
 
       final StreamSubscription<String> stdoutSubscription = _lldbProcess!.stdout
+<<<<<<< HEAD
           .transform<String>(utf8.decoder)
           .transform<String>(const LineSplitter())
           .listen((String line) {
@@ -141,6 +187,32 @@ return False
           .listen((String line) {
             _logger.printTrace('[lldb]: $line');
             _monitorError(line);
+=======
+          .transform(utf8LineDecoder)
+          .listen((String line) {
+            if (_isAttached && !_ignoreLog(line)) {
+              // Only forwards logs after LLDB is attached. All logs before then are part of the
+              // attach process.
+
+              lldbLogForwarder.addLog(line);
+            } else {
+              _logger.printTrace('[lldb]: $line');
+              _logCompleter?.checkForMatch(line);
+            }
+          });
+
+      final StreamSubscription<String> stderrSubscription = _lldbProcess!.stderr
+          .transform(utf8LineDecoder)
+          .listen((String line) {
+            _monitorError(line);
+            if (_isAttached && !_ignoreLog(line)) {
+              // Only forwards logs after LLDB is attached. All logs before then are part of the
+              // attach process.
+              lldbLogForwarder.addLog(line);
+            } else {
+              _logger.printTrace('[lldb]: $line');
+            }
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
           });
 
       unawaited(
@@ -166,6 +238,10 @@ return False
     final bool success = (_lldbProcess == null) || _lldbProcess!.kill();
     _lldbProcess = null;
     _logCompleter = null;
+<<<<<<< HEAD
+=======
+    _isAttached = false;
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
     return success;
   }
 
@@ -258,6 +334,13 @@ return False
       exit();
     }
   }
+<<<<<<< HEAD
+=======
+
+  bool _ignoreLog(String log) {
+    return _ignorePatterns.any((Pattern pattern) => log.contains(pattern));
+  }
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
 }
 
 class _LLDBError implements Exception {
@@ -334,3 +417,26 @@ class _LLDBProcess {
     return _stdinWriteFuture;
   }
 }
+<<<<<<< HEAD
+=======
+
+/// This class is used to forward logs from LLDB to any active listeners.
+class LLDBLogForwarder {
+  final _streamController = StreamController<String>.broadcast();
+  Stream<String> get logLines => _streamController.stream;
+
+  void addLog(String log) {
+    if (!_streamController.isClosed) {
+      _streamController.add(log);
+    }
+  }
+
+  Future<bool> exit() async {
+    if (_streamController.hasListener) {
+      // Tell listeners the process died.
+      await _streamController.close();
+    }
+    return true;
+  }
+}
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787

@@ -710,7 +710,7 @@ endforeach(ffi_plugin)
 
 const _dartPluginRegisterWith = r'''
       try {
-        {{dartClass}}.registerWith();
+        {{pluginName}}.{{dartClass}}.registerWith();
       } catch (err) {
         print(
           '`{{pluginName}}` threw an error: $err. '
@@ -732,19 +732,19 @@ const _dartPluginRegistryForNonWebTemplate =
 
 import 'dart:io'; // flutter_ignore: dart_io_import.
 {{#android}}
-import 'package:{{pluginName}}/{{dartFileName}}';
+import 'package:{{pluginName}}/{{dartFileName}}' as {{pluginName}};
 {{/android}}
 {{#ios}}
-import 'package:{{pluginName}}/{{dartFileName}}';
+import 'package:{{pluginName}}/{{dartFileName}}' as {{pluginName}};
 {{/ios}}
 {{#linux}}
-import 'package:{{pluginName}}/{{dartFileName}}';
+import 'package:{{pluginName}}/{{dartFileName}}' as {{pluginName}};
 {{/linux}}
 {{#macos}}
-import 'package:{{pluginName}}/{{dartFileName}}';
+import 'package:{{pluginName}}/{{dartFileName}}' as {{pluginName}};
 {{/macos}}
 {{#windows}}
-import 'package:{{pluginName}}/{{dartFileName}}';
+import 'package:{{pluginName}}/{{dartFileName}}' as {{pluginName}};
 {{/windows}}
 
 @pragma('vm:entry-point')
@@ -1662,6 +1662,7 @@ bool _hasPluginInlineDartImpl(Plugin plugin, String platformKey) {
   if (platformInfo == null) {
     return false;
   }
+<<<<<<< HEAD
   if (platformInfo.dartClass == 'none') {
     // TODO(matanlurey): Remove as part of https://github.com/flutter/flutter/issues/57497.
     globals.printWarning(
@@ -1671,6 +1672,8 @@ bool _hasPluginInlineDartImpl(Plugin plugin, String platformKey) {
     );
     return false;
   }
+=======
+>>>>>>> b45fa18946ecc2d9b4009952c636ba7e2ffbb787
   return true;
 }
 
